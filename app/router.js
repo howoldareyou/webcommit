@@ -1,12 +1,11 @@
 'use strict';
-const path = require('path');
 
 module.exports = app => {
-  const { router, controller, middlewares } = app;
+  const { router, controller, middlewares, config } = app;
   const ctrl = controller.main;
 
   const multipart = middlewares.multipart({
-    tmpdir: path.join(app.baseDir, 'temp'),
+    tmpdir: config.multipart.tmpdir,
   });
 
   router.get('/', ctrl.index);

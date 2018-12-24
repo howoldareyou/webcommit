@@ -55,6 +55,7 @@ module.exports = appInfo => {
   config.multipart = {
     whitelist: () => true,
     fileSize: 2 * 1024 * 1024 * 1024,
+    tmpdir: path.join(appInfo.baseDir, 'temp'),
   };
 
   return config;

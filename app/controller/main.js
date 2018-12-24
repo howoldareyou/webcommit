@@ -20,7 +20,7 @@ function decodeFiles(str) {
 class HomeController extends Controller {
   // 入口url，返回index.html
   async index() {
-    this.ctx.body = 'hi, egg';
+    this.ctx.redirect('/index.html');
   }
 
   // 获取session信息
@@ -81,7 +81,7 @@ class HomeController extends Controller {
   async commit() {
     this.ctx.validate({
       files: 'string',
-      message: 'string',
+      message: { type: 'string', max: 64 },
     });
     const { files, message } = this.ctx.request.body;
     const fileList = decodeFiles(files);
