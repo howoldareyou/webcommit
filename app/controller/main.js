@@ -148,7 +148,6 @@ class HomeController extends Controller {
         const el = filelist[i];
         if (el.isdir) continue;
         const info = await fileInfo(el.path);
-
         files.push({
           name: el.name,
           creatTime: moment(info.ctime).unix(),
@@ -177,8 +176,23 @@ class HomeController extends Controller {
 
     const fileList = decodeFiles(data.file);
     const filepath = path.join(path.join(svnConfig.path, this.ctx.session.username), fileList[0]);
-    this.download(filepath, fileList[0]);
 
+    const info = await fileInfo(filepath);
+    const sendData = {
+      name: fileList[0],
+      size: info.size,
+    };
+    const logList = await this.service.svn.log(filepath, 1);
+    const log = logList[0] || {};
+    if (log.date) {
+      sendData.creatTime = moment(log.date).format('YYYY-MM-DD HH:mm:ss');
+    }
+    if (log.msg) {
+      sendData.message = log.msg;
+    }
+    this.service.dingding.send(sendData);
+
+    this.download(filepath, fileList[0]);
   }
 }
 
