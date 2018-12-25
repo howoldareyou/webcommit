@@ -69,9 +69,10 @@ module.exports = options => {
         continue;
       }
 
+      const todayDir = moment().format('YYYYMMDD');
       if (!storedir) {
         // ${tmpdir}/YYYY/MM/DD/HH
-        storedir = path.join(options.tmpdir, moment().format('YYYYMMDD'));
+        storedir = path.join(options.tmpdir, todayDir);
         const exists = await fs.exists(storedir);
         if (!exists) {
           await mkdirp(storedir);
@@ -82,7 +83,7 @@ module.exports = options => {
       const target = fs.createWriteStream(filepath);
       await pump(part, target);
       // https://github.com/mscdex/busboy/blob/master/lib/types/multipart.js#L221
-      meta.fileId = fileId;
+      meta.fileId = path.join(todayDir, fileId);
       meta.filepath = filepath;
       requestFiles.push(meta);
 

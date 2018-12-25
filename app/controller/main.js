@@ -1,6 +1,11 @@
 'use strict';
+const fs = require('fs');
+const path = require('path');
+const moment = require('moment');
 
 const Controller = require('../common/baseController');
+const { getType, readDir } = require('../utils/utils');
+const svnConfig = require('../../config/svnConfig.json');
 
 function decodeFiles(str) {
   const arr = str.split('f');
@@ -17,6 +22,18 @@ function decodeFiles(str) {
   }
 }
 
+function fileInfo(file) {
+  return new Promise((resolve, reject) => {
+    fs.stat(file, async (err, stats) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(stats);
+      }
+    });
+  });
+}
+
 class HomeController extends Controller {
   // 入口url，返回index.html
   async index() {
@@ -27,6 +44,7 @@ class HomeController extends Controller {
   async session() {
     this.success({
       session: this.ctx.session,
+      type: svnConfig.type || 'in',
       uploadLimit: this.app.config.multipart.fileSize,
     });
   }
@@ -86,14 +104,81 @@ class HomeController extends Controller {
     const { files, message } = this.ctx.request.body;
     const fileList = decodeFiles(files);
 
-    this.success({ fileList, message });
+    await this.service.svn.commit(fileList, message);
+
+    this.success();
   }
 
   // 获取提交日志
   async getLog() {
+    const logs = await this.service.svn.log();
     this.success({
-      log: 'zhanglizhanglizhanglizhanglizhanglizhanglizhanglizhangli',
+      log: logs.map(el => {
+        let str = '';
+        if (el.date) {
+          str += moment(el.date).format('YYYY-MM-DD HH:mm:ss') + '\n';
+        }
+        if (el.msg) {
+          str += el.msg + '\n';
+        }
+        if (el.paths && el.paths.path) {
+          if (getType(el.paths.path) === 'array') {
+            str += el.paths.path.map(p => p.$.action + ' ' + p._).join('\n') + '\n';
+          } else {
+            str += el.paths.path.$.action + ' ' + el.paths.path._ + '\n';
+          }
+        }
+        return str;
+      }).join('\n'),
     });
+  }
+
+  // 获取提交日志
+  async updateVersion() {
+    await this.service.svn.update();
+    this.success();
+  }
+
+  // 获取文件
+  async getFiles() {
+    const files = [];
+    try {
+      const filelist = await readDir(path.join(svnConfig.path, this.ctx.session.username));
+      for (let i = 0; i < filelist.length; i++) {
+        const el = filelist[i];
+        if (el.isdir) continue;
+        const info = await fileInfo(el.path);
+
+        files.push({
+          name: el.name,
+          creatTime: moment(info.ctime).unix(),
+          size: info.size,
+        });
+      }
+    } catch (error) {
+      this.error('访问您的目录出错了...');
+    }
+
+    files.sort((a, b) => b.creatTime - a.creatTime);
+    this.success({ files });
+  }
+
+  // 下载文件
+  async loadFile() {
+    const data = {};
+    const fileArg = this.ctx.queries.file;
+    if (fileArg && fileArg.length > 0) {
+      data.file = fileArg[0];
+    }
+
+    this.ctx.validate({
+      file: 'string',
+    }, data);
+
+    const fileList = decodeFiles(data.file);
+    const filepath = path.join(path.join(svnConfig.path, this.ctx.session.username), fileList[0]);
+    this.download(filepath, fileList[0]);
+
   }
 }
 

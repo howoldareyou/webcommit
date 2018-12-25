@@ -11,6 +11,9 @@ module.exports = app => {
   router.get('/', ctrl.index);
   router.get('/session', ctrl.session);
   router.get('/getLog', ctrl.getLog);
+  router.get('/getFiles', ctrl.getFiles);
+  router.get('/loadFile', ctrl.loadFile);
+  router.get('/updateVersion', ctrl.updateVersion);
 
   router.post('/uploadFile', multipart, ctrl.uploadFile);
   router.post('/login', ctrl.login);

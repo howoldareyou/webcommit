@@ -1,9 +1,29 @@
 'use strict';
 
+function userErr(message = '', code) {
+  const err = new Error();
+  err.code = 'user_error';
+  err.message = message;
+  if (code) err.errCode = code;
+  return err;
+}
+
+const noNeedLoginUrl = [
+  '/',
+  '/session',
+  '/login',
+];
 module.exports = () => {
   return async function errorCatch(ctx, next) {
     const sTime = new Date().getTime();
     try {
+      const searchStart = ctx.originalUrl.indexOf('?');
+      const url = searchStart !== -1 ? ctx.originalUrl.substr(0, searchStart) : ctx.originalUrl;
+      if (!noNeedLoginUrl.includes(url)) {
+        if (!ctx.session || !ctx.session.username) {
+          throw userErr('您还未登录，请先登录...');
+        }
+      }
       await next();
     } catch (e) {
       if (e.code !== 0) { // 发生错误

@@ -1,4 +1,5 @@
 'use strict';
+const fs = require('fs');
 const path = require('path');
 
 module.exports = appInfo => {
@@ -19,6 +20,10 @@ module.exports = appInfo => {
 
   config.static = {
     prefix: '/',
+  };
+
+  config.siteFile = {
+    '/favicon.ico': fs.readFileSync(path.join(__dirname, './logo.png')),
   };
 
   config.customLogger = {

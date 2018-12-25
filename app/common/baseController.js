@@ -1,5 +1,5 @@
 'use strict';
-
+const fs = require('fs');
 const Controller = require('egg').Controller;
 const { userErr } = require('../utils/utils');
 
@@ -21,6 +21,13 @@ class BaseController extends Controller {
   // 发生错误时，用于抛出异常，并终止后续的逻辑
   error(msg) {
     throw userErr(msg);
+  }
+
+  download(path, filename) {
+    this.ctx.set('Content-Type', 'application/octet-stream');
+    this.ctx.attachment(filename || 'file');
+    const rs = fs.createReadStream(path);
+    this.ctx.body = rs;
   }
 
 }
